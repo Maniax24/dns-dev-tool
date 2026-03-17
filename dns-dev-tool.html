@@ -1711,12 +1711,12 @@ async function checkSSL(domain) {
   content.innerHTML = '<div class="loading-shimmer">fetching certificate transparency logs…</div>';
 
   try {
-    // crt.sh via CORS proxy
-    const crtUrl = `https://crt.sh/?q=${encodeURIComponent(domain)}&output=json`;
-    const resp = await fetchTimeout(`https://corsproxy.io/?url=${encodeURIComponent(crtUrl)}`, {}, 12000);
-    if (!resp.ok) throw new Error('crt.sh unavailable');
+    // CertSpotter API — proper CORS support, no key needed
+    const resp = await fetchTimeout(`https://api.certspotter.com/v1/issuances?domain=${encodeURIComponent(domain)}&include_subdomains=false&expand=dns_names&expand=issuer&expand=cert`, {}, 12000);
+    if (!resp.ok) throw new Error('CertSpotter unavailable');
     const certs = await resp.json();
 
+    // CertSpotter returns array of issuances
     if (!certs || !certs.length) {
       content.innerHTML = '<div class="whois-unsupported">No certificates found in transparency logs for this domain.</div>';
       _findings.ssl = { error: 'no certs found' };
@@ -1724,21 +1724,21 @@ async function checkSSL(domain) {
     }
 
     // Sort by not_after descending (most recent first)
-    certs.sort((a, b) => new Date(b.not_after) - new Date(a.not_after));
+    certs.sort((a, b) => new Date(b.cert.not_after) - new Date(a.cert.not_after));
 
     const now = Date.now();
     const shown = certs.slice(0, 4);
     const totalCount = certs.length;
 
     let html = `<div class="ssl-grid">`;
-    shown.forEach((cert, i) => {
+    shown.forEach((issuance, i) => {
+      const cert = issuance.cert || {};
       const expiry = new Date(cert.not_after);
       const daysLeft = Math.floor((expiry - now) / 86400000);
       const daysBadgeClass = daysLeft > 60 ? 'green' : daysLeft > 30 ? 'amber' : 'red';
       const daysLabel = daysLeft < 0 ? `expired ${Math.abs(daysLeft)}d ago` : `${daysLeft}d left`;
-      const issuer = cert.issuer_name || cert.issuer_ca_id || 'Unknown';
-      const commonName = cert.common_name || '';
-      const sans = cert.name_value ? cert.name_value.split('\n').filter(Boolean) : [];
+      const issuer = issuance.issuer ? Object.entries(issuance.issuer).map(([k,v])=>`${k}=${v}`).join(', ') : 'Unknown';
+      const sans = issuance.dns_names || [];
 
       html += `
         <div class="ssl-card" style="animation-delay:${i*80}ms">
@@ -1747,16 +1747,12 @@ async function checkSSL(domain) {
             <span class="ssl-days-badge ${daysBadgeClass}">${daysLabel}</span>
           </div>
           <div class="ssl-field">
-            <div class="ssl-field-label">Common Name</div>
-            <div class="ssl-field-val">${esc(commonName)}</div>
-          </div>
-          <div class="ssl-field">
             <div class="ssl-field-label">Issuer</div>
             <div class="ssl-field-val">${esc(issuer.length > 80 ? issuer.slice(0,80)+'…' : issuer)}</div>
           </div>
           <div class="ssl-field">
             <div class="ssl-field-label">Expires</div>
-            <div class="ssl-field-val">${esc(cert.not_after)}</div>
+            <div class="ssl-field-val">${esc(cert.not_after || '—')}</div>
           </div>
           ${sans.length ? `
           <div class="ssl-field">
@@ -1773,14 +1769,14 @@ async function checkSSL(domain) {
     html += `<div class="ssl-ct-count">📋 ${totalCount} certificate transparency ${totalCount===1?'entry':'entries'} found for ${esc(domain)}</div>`;
 
     content.innerHTML = html;
+    const latestCert = shown[0]?.cert || {};
     _findings.ssl = {
       totalCerts: totalCount,
       latest: shown[0] ? {
-        commonName: shown[0].common_name,
-        issuer: shown[0].issuer_name,
-        notAfter: shown[0].not_after,
-        daysLeft: Math.floor((new Date(shown[0].not_after) - now) / 86400000),
-        sans: shown[0].name_value ? shown[0].name_value.split('\n').filter(Boolean) : []
+        issuer: shown[0].issuer,
+        notAfter: latestCert.not_after,
+        daysLeft: Math.floor((new Date(latestCert.not_after) - now) / 86400000),
+        sans: shown[0].dns_names || []
       } : null
     };
   } catch(e) {
@@ -1797,24 +1793,27 @@ async function checkWHOIS(domain) {
   content.innerHTML = '<div class="loading-shimmer">fetching WHOIS data…</div>';
 
   try {
-    const whoisUrl = `https://who-dat.as93.net/${encodeURIComponent(domain)}`;
-    const resp = await fetchTimeout(`https://corsproxy.io/?url=${encodeURIComponent(whoisUrl)}`, {}, 10000);
-    if (!resp.ok) throw new Error(`WHOIS API error ${resp.status}`);
+    // RDAP — modern JSON WHOIS replacement, browser-friendly CORS
+    const resp = await fetchTimeout(`https://rdap.org/domain/${encodeURIComponent(domain)}`, {}, 10000);
+    if (!resp.ok) throw new Error(`RDAP lookup error ${resp.status}`);
     const data = await resp.json();
 
-    if (!data || data.error) {
-      content.innerHTML = `<div class="whois-unsupported">WHOIS unavailable for this TLD or domain. ${data?.error ? esc(data.error) : ''}</div>`;
-      _findings.whois = { error: data?.error || 'unsupported' };
+    if (!data || data.errorCode) {
+      content.innerHTML = `<div class="whois-unsupported">WHOIS/RDAP unavailable for this TLD or domain.</div>`;
+      _findings.whois = { error: 'unsupported' };
       return;
     }
 
     const now = Date.now();
-    const registrar = data.registrar?.name || data.registrar || '—';
-    const created = data.created_date || data.creation_date || '—';
-    const expires = data.expiration_date || data.expiry_date || '—';
-    const country = data.registrant?.country || data.registrant_country || '—';
-    const nameservers = data.nameservers || data.name_servers || [];
-    const status = data.status || [];
+    // Parse RDAP format
+    const getEvent = (type) => (data.events || []).find(e => e.eventAction === type)?.eventDate || '—';
+    const registrarEntity = (data.entities || []).find(e => (e.roles||[]).includes('registrar'));
+    const registrar = registrarEntity?.vcardArray?.[1]?.find(f=>f[0]==='fn')?.[3] || registrarEntity?.handle || '—';
+    const created = getEvent('registration');
+    const expires = getEvent('expiration');
+    const country = (data.entities || []).find(e => (e.roles||[]).includes('registrant'))?.vcardArray?.[1]?.find(f=>f[0]==='adr')?.[1]?.['country-name'] || '—';
+    const nameservers = (data.nameservers || []).map(ns => ns.ldhName || ns.unicodeName || '').filter(Boolean);
+    const status = Array.isArray(data.status) ? data.status : [];
 
     let expiryBadge = '';
     if (expires && expires !== '—') {
