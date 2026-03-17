@@ -71,50 +71,53 @@
 
     /* ── Theme toggle ── */
     .theme-toggle {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 100;
-      background: var(--surface);
+      background: transparent;
       border: 1px solid var(--border2);
       color: var(--muted2);
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 14px;
       transition: all 0.15s;
       line-height: 1;
+      flex-shrink: 0;
     }
     .theme-toggle:hover { border-color: var(--tld-c); color: var(--tld-c); }
 
     .export-btn-fixed {
-      position: fixed;
-      top: 20px;
-      right: 64px;
-      z-index: 100;
-      background: var(--surface);
+      background: transparent;
       border: 1px solid var(--border2);
       color: var(--muted2);
-      height: 36px;
-      padding: 0 12px;
-      border-radius: 8px;
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 6px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       font-family: inherit;
-      font-size: 0.7rem;
+      font-size: 0.62rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       transition: all 0.15s;
       white-space: nowrap;
+      flex-shrink: 0;
     }
     .export-btn-fixed:hover { border-color: var(--auth-c); color: var(--auth-c); }
     .export-btn-fixed:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
@@ -204,7 +207,6 @@
       display: flex;
       max-width: 640px;
       margin: 0 auto 16px;
-      padding-right: 120px;
       gap: 10px;
     }
     .input-wrap {
@@ -760,12 +762,6 @@
 </head>
 <body>
 
-<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
-<button class="export-btn-fixed" id="export-btn-fixed" onclick="exportJSON()" disabled title="Export all findings as JSON">
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-  EXPORT JSON
-</button>
-
 <div class="header">
   <div class="header-tag">Developer Tool</div>
   <h1>DEV DNS TOOL</h1>
@@ -793,6 +789,13 @@
   <a href="#section-headers" class="nav-link" data-section="section-headers">Headers</a>
   <a href="#section-subs" class="nav-link" data-section="section-subs">Subdomains</a>
   <a href="#section-dnssec" class="nav-link" data-section="section-dnssec">DNSSEC</a>
+  <div class="nav-actions">
+    <button class="export-btn-fixed" id="export-btn-fixed" onclick="exportJSON()" disabled title="Export all findings as JSON">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      EXPORT
+    </button>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
+  </div>
 </nav>
 
 <div id="section-trace" style="scroll-margin-top:44px">
