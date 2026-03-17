@@ -69,6 +69,103 @@
     :root.light body::before { background-image: radial-gradient(circle, #c5d0e0 1px, transparent 1px); opacity: 0.5; }
     :root.light .geo-map-wrap, :root.light #geo-map svg { background: #d4e4f5 !important; }
 
+    /* ── Hacker Mode ── */
+    :root.hacker {
+      --bg: #000a00;
+      --surface: #001400;
+      --surface2: #001e00;
+      --border: #003300;
+      --border2: #005500;
+      --text: #00ff64;
+      --muted: #004400;
+      --muted2: #007700;
+      --root-c:  #ffff00;
+      --tld-c:   #00ff64;
+      --auth-c:  #00ffcc;
+      --ans-c:   #00e5ff;
+      --type-a:     #00e5ff;
+      --type-aaaa:  #cc00ff;
+      --type-mx:    #ff9900;
+      --type-ns:    #00ff64;
+      --type-txt:   #007700;
+      --type-cname: #ff00aa;
+      --type-soa:   #ffff00;
+      --map-ocean: #000a00;
+      --map-land: #001800;
+      --map-grat: #00ff6408;
+      --map-border: #00ff6430;
+      --map-vignette: #000500;
+      --node-bg: #001400;
+      --node-sub: #007700;
+    }
+    :root.hacker body {
+      background: #000a00;
+    }
+    :root.hacker body::before {
+      background-image: radial-gradient(circle, #00ff6422 1px, transparent 1px);
+      opacity: 0.6;
+    }
+    :root.hacker .panel,
+    :root.hacker .records-section,
+    :root.hacker .email-section,
+    :root.hacker .geo-section,
+    :root.hacker .prop-section,
+    :root.hacker .ssl-section,
+    :root.hacker .whois-section,
+    :root.hacker .headers-section,
+    :root.hacker .sub-section,
+    :root.hacker .dnssec-section,
+    :root.hacker .axfr-section {
+      border-color: #00ff6430;
+      box-shadow: 0 0 12px rgba(0,255,100,0.05), inset 0 0 30px rgba(0,255,100,0.02);
+    }
+    :root.hacker .header h1 {
+      background: linear-gradient(135deg, #00ff64 0%, #00e5ff 50%, #00ff64 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 20px rgba(0,255,100,0.5));
+      animation: hacker-flicker 8s infinite;
+    }
+    :root.hacker .section-nav {
+      background: rgba(0,10,0,0.95);
+      border-bottom-color: #00ff6430;
+    }
+    :root.hacker .section-nav a { color: #007700; }
+    :root.hacker .section-nav a:hover { color: #00ff64; border-bottom-color: #00ff6460; }
+    :root.hacker .section-nav a.active { color: #00ff64; border-bottom-color: #00ff64; }
+    :root.hacker .search-wrap input {
+      background: #001400;
+      border-color: #00ff6440;
+      color: #00ff64;
+      caret-color: #00ff64;
+    }
+    :root.hacker .search-wrap input:focus {
+      border-color: #00ff64;
+      box-shadow: 0 0 0 3px rgba(0,255,100,0.12), 0 0 20px rgba(0,255,100,0.08);
+    }
+    :root.hacker .search-wrap input::placeholder { color: #004400; }
+    :root.hacker .trace-btn {
+      background: linear-gradient(135deg, #003300, #005500);
+      border-color: rgba(0,255,100,0.4);
+      box-shadow: 0 4px 20px rgba(0,255,100,0.15);
+    }
+    :root.hacker .trace-btn:hover { box-shadow: 0 4px 28px rgba(0,255,100,0.4); }
+    :root.hacker .panel-title::before { background: #00ff64; box-shadow: 0 0 6px #00ff64; }
+    :root.hacker .stat-value.green { color: #00ff64; }
+    :root.hacker .log-entries { color: #00cc50; }
+    :root.hacker .rec-card { border-color: #00330044; background: #001400; }
+    :root.hacker .rec-card:hover { border-color: #00ff6440; }
+    :root.hacker .theme-toggle,
+    :root.hacker .export-btn-fixed { border-color: #00ff6440; color: #00cc50; background: transparent; }
+    :root.hacker .theme-toggle:hover { border-color: #00ff64; color: #00ff64; }
+    @keyframes hacker-flicker {
+      0%,95%,100% { opacity: 1; filter: drop-shadow(0 0 20px rgba(0,255,100,0.5)); }
+      96% { opacity: 0.85; filter: drop-shadow(0 0 30px rgba(0,255,100,0.8)); }
+      97% { opacity: 1; }
+      98% { opacity: 0.9; }
+    }
+
     /* ── Theme toggle ── */
     .theme-toggle {
       background: transparent;
@@ -781,7 +878,7 @@
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       EXPORT
     </button>
-    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
   </div>
 </nav>
 
@@ -1282,9 +1379,20 @@ async function showGeolocation(ipList) {
         ? Promise.resolve(_worldCache)
         : fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json').then(r=>r.json()).then(d => { _worldCache=d; return d; }),
       ...ipList.slice(0, 8).map(({ip, type}) =>
-        fetchTimeout(`https://ipapi.co/${ip}/json/`, {}, 6000)
+        fetchTimeout(`https://ip.guide/${ip}`, {}, 6000)
           .then(r => r.json())
-          .then(d => ({ ...d, _type: type, _ip: ip }))
+          .then(d => ({
+            _type: type, _ip: ip,
+            latitude: d.location?.latitude,
+            longitude: d.location?.longitude,
+            city: d.location?.city,
+            country_name: d.location?.country,
+            country_code: d.network?.autonomous_system?.country,
+            org: d.network?.autonomous_system?.organization,
+            asn: d.network?.autonomous_system?.asn ? `AS${d.network.autonomous_system.asn} ${d.network.autonomous_system.name}` : '',
+            timezone: d.location?.timezone,
+            error: !d.location
+          }))
           .catch(() => ({ error: true, _ip: ip, _type: type }))
       )
     ]);
@@ -2330,15 +2438,32 @@ function updateNavActive() {
 }
 window.addEventListener('scroll', updateNavActive, { passive: true });
 
-// ── Theme toggle ─────────────────────────────────────────────
+// ── Theme toggle — cycles dark → light → hacker ──────────────
 function toggleTheme() {
-  const isLight = document.documentElement.classList.toggle('light');
-  document.getElementById('theme-toggle').textContent = isLight ? '🌑' : '🌙';
-  localStorage.setItem('dns-dev-tool-theme', isLight ? 'light' : 'dark');
+  const root = document.documentElement;
+  const btn = document.getElementById('theme-toggle');
+  if (root.classList.contains('hacker')) {
+    root.classList.remove('hacker');
+    btn.textContent = '🌙';
+    localStorage.setItem('dns-dev-tool-theme', 'dark');
+  } else if (root.classList.contains('light')) {
+    root.classList.remove('light');
+    root.classList.add('hacker');
+    btn.textContent = '💀';
+    localStorage.setItem('dns-dev-tool-theme', 'hacker');
+  } else {
+    root.classList.add('light');
+    btn.textContent = '🌑';
+    localStorage.setItem('dns-dev-tool-theme', 'light');
+  }
 }
-if (localStorage.getItem('dns-dev-tool-theme') === 'light') {
+const _savedTheme = localStorage.getItem('dns-dev-tool-theme');
+if (_savedTheme === 'light') {
   document.documentElement.classList.add('light');
   document.getElementById('theme-toggle').textContent = '🌑';
+} else if (_savedTheme === 'hacker') {
+  document.documentElement.classList.add('hacker');
+  document.getElementById('theme-toggle').textContent = '💀';
 }
 
 // ── URL hash support ─────────────────────────────────────────
