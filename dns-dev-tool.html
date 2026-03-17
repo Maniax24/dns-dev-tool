@@ -1831,7 +1831,7 @@ async function checkSSL(domain) {
 
   try {
     // CertSpotter API — proper CORS support, no key needed
-    const resp = await fetchTimeout(`https://api.certspotter.com/v1/issuances?domain=${encodeURIComponent(domain)}&include_subdomains=false&expand=dns_names&expand=issuer&expand=cert`, {}, 12000);
+    const resp = await fetchTimeout(`https://api.certspotter.com/v1/issuances?domain=${encodeURIComponent(domain)}&include_subdomains=true&expand=dns_names&expand=issuer&expand=cert`, {}, 12000);
     if (!resp.ok) throw new Error('CertSpotter unavailable');
     const certs = await resp.json();
 
