@@ -878,7 +878,7 @@
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       EXPORT
     </button>
-    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+    <button class="theme-toggle" id="theme-toggle" onclick="cycleTheme()" title="Cycle theme: dark / light / hacker">🌙</button>
   </div>
 </nav>
 
@@ -1382,16 +1382,17 @@ async function showGeolocation(ipList) {
         fetchTimeout(`https://ip.guide/${ip}`, {}, 6000)
           .then(r => r.json())
           .then(d => ({
-            _type: type, _ip: ip,
+            _ip: ip, _type: type,
             latitude: d.location?.latitude,
             longitude: d.location?.longitude,
             city: d.location?.city,
+            region: d.location?.region || d.location?.subdivision,
             country_name: d.location?.country,
             country_code: d.network?.autonomous_system?.country,
-            org: d.network?.autonomous_system?.organization,
-            asn: d.network?.autonomous_system?.asn ? `AS${d.network.autonomous_system.asn} ${d.network.autonomous_system.name}` : '',
+            org: d.network?.autonomous_system?.organization || d.network?.autonomous_system?.name,
+            asn: d.network?.autonomous_system?.asn ? 'AS'+d.network.autonomous_system.asn : '',
             timezone: d.location?.timezone,
-            error: !d.location
+            error: !d.location?.latitude
           }))
           .catch(() => ({ error: true, _ip: ip, _type: type }))
       )
@@ -2438,33 +2439,23 @@ function updateNavActive() {
 }
 window.addEventListener('scroll', updateNavActive, { passive: true });
 
-// ── Theme toggle — cycles dark → light → hacker ──────────────
-function toggleTheme() {
-  const root = document.documentElement;
-  const btn = document.getElementById('theme-toggle');
-  if (root.classList.contains('hacker')) {
-    root.classList.remove('hacker');
-    btn.textContent = '🌙';
-    localStorage.setItem('dns-dev-tool-theme', 'dark');
-  } else if (root.classList.contains('light')) {
-    root.classList.remove('light');
-    root.classList.add('hacker');
-    btn.textContent = '💀';
-    localStorage.setItem('dns-dev-tool-theme', 'hacker');
-  } else {
-    root.classList.add('light');
-    btn.textContent = '🌑';
-    localStorage.setItem('dns-dev-tool-theme', 'light');
-  }
+// ── Theme cycle ───────────────────────────────────────────────
+const THEMES = ['dark', 'light', 'hacker'];
+const THEME_ICONS = { dark: '🌙', light: '🌑', hacker: '💻' };
+function setTheme(t) {
+  document.documentElement.classList.remove('light', 'hacker');
+  if (t === 'light') document.documentElement.classList.add('light');
+  if (t === 'hacker') document.documentElement.classList.add('hacker');
+  document.getElementById('theme-toggle').textContent = THEME_ICONS[t];
+  localStorage.setItem('dns-dev-tool-theme', t);
+}
+function cycleTheme() {
+  const cur = localStorage.getItem('dns-dev-tool-theme') || 'dark';
+  const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
+  setTheme(next);
 }
 const _savedTheme = localStorage.getItem('dns-dev-tool-theme');
-if (_savedTheme === 'light') {
-  document.documentElement.classList.add('light');
-  document.getElementById('theme-toggle').textContent = '🌑';
-} else if (_savedTheme === 'hacker') {
-  document.documentElement.classList.add('hacker');
-  document.getElementById('theme-toggle').textContent = '💀';
-}
+if (_savedTheme) setTheme(_savedTheme);
 
 // ── URL hash support ─────────────────────────────────────────
 if (location.hash) {
