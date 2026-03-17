@@ -1734,7 +1734,7 @@ async function checkSSL(domain) {
     }
 
     // Sort by not_after descending (most recent first)
-    certs.sort((a, b) => new Date(b.cert.not_after) - new Date(a.cert.not_after));
+    certs.sort((a, b) => new Date(b.not_after) - new Date(a.not_after));
 
     const now = Date.now();
     const shown = certs.slice(0, 4);
@@ -1742,12 +1742,11 @@ async function checkSSL(domain) {
 
     let html = `<div class="ssl-grid">`;
     shown.forEach((issuance, i) => {
-      const cert = issuance.cert || {};
-      const expiry = new Date(cert.not_after);
+      const expiry = new Date(issuance.not_after);
       const daysLeft = Math.floor((expiry - now) / 86400000);
       const daysBadgeClass = daysLeft > 60 ? 'green' : daysLeft > 30 ? 'amber' : 'red';
       const daysLabel = daysLeft < 0 ? `expired ${Math.abs(daysLeft)}d ago` : `${daysLeft}d left`;
-      const issuer = issuance.issuer ? Object.entries(issuance.issuer).map(([k,v])=>`${k}=${v}`).join(', ') : 'Unknown';
+      const issuer = issuance.issuer?.friendly_name || issuance.issuer?.o || Object.values(issuance.issuer||{}).filter(Boolean)[0] || 'Unknown';
       const sans = issuance.dns_names || [];
 
       html += `
@@ -1762,7 +1761,7 @@ async function checkSSL(domain) {
           </div>
           <div class="ssl-field">
             <div class="ssl-field-label">Expires</div>
-            <div class="ssl-field-val">${esc(cert.not_after || '—')}</div>
+            <div class="ssl-field-val">${esc(issuance.not_after || '—')}</div>
           </div>
           ${sans.length ? `
           <div class="ssl-field">
@@ -1779,13 +1778,12 @@ async function checkSSL(domain) {
     html += `<div class="ssl-ct-count">📋 ${totalCount} certificate transparency ${totalCount===1?'entry':'entries'} found for ${esc(domain)}</div>`;
 
     content.innerHTML = html;
-    const latestCert = shown[0]?.cert || {};
     _findings.ssl = {
       totalCerts: totalCount,
       latest: shown[0] ? {
-        issuer: shown[0].issuer,
-        notAfter: latestCert.not_after,
-        daysLeft: Math.floor((new Date(latestCert.not_after) - now) / 86400000),
+        issuer: shown[0].issuer?.friendly_name || 'Unknown',
+        notAfter: shown[0].not_after,
+        daysLeft: Math.floor((new Date(shown[0].not_after) - now) / 86400000),
         sans: shown[0].dns_names || []
       } : null
     };
