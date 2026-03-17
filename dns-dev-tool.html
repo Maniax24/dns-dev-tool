@@ -126,6 +126,9 @@
       color: var(--text);
       font-family: 'JetBrains Mono','Fira Code','Cascadia Code',ui-monospace,monospace;
       min-height: 100vh;
+      padding: 0;
+    }
+    .body-content {
       padding: 32px 20px 60px;
     }
 
@@ -140,7 +143,7 @@
       pointer-events: none;
       z-index: 0;
     }
-    body > * { position: relative; z-index: 1; }
+    body > *, .body-content > * { position: relative; z-index: 1; }
 
     /* ── Header ── */
     .header { text-align: center; margin-bottom: 20px; }
@@ -176,8 +179,8 @@
       background: rgba(6,8,16,0.92);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      padding: 0 20px;
-      margin: -32px -20px 20px;
+      padding: 0 16px;
+      margin: 0 0 20px;
       display: flex;
       gap: 0;
       overflow-x: auto;
@@ -204,7 +207,8 @@
     /* ── Search ── */
     .search-wrap {
       display: flex;
-      max-width: 640px;
+      max-width: 860px;
+      width: 100%;
       margin: 0 auto 16px;
       gap: 10px;
     }
@@ -761,22 +765,6 @@
 </head>
 <body>
 
-<div class="header">
-  <div class="header-tag">Developer Tool</div>
-  <h1>DEV DNS TOOL</h1>
-  <p>full-stack domain intelligence</p>
-</div>
-
-<div class="search-wrap">
-  <div class="input-wrap">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-    </svg>
-    <input id="domain-input" type="text" placeholder="domain to analyze…" value="" spellcheck="false" autocomplete="off" />
-  </div>
-  <button class="trace-btn" id="trace-btn" onclick="startTrace()">ANALYZE →</button>
-</div>
-
 <nav class="section-nav" id="section-nav">
   <a href="#section-trace" class="nav-link" data-section="section-trace">Trace</a>
   <a href="#section-records" class="nav-link" data-section="section-records">Records</a>
@@ -796,6 +784,24 @@
     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
   </div>
 </nav>
+
+<div class="body-content">
+
+<div class="header">
+  <div class="header-tag">Developer Tool</div>
+  <h1>DEV DNS TOOL</h1>
+  <p>full-stack domain intelligence</p>
+</div>
+
+<div class="search-wrap">
+  <div class="input-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input id="domain-input" type="text" placeholder="domain to analyze…" value="" spellcheck="false" autocomplete="off" />
+  </div>
+  <button class="trace-btn" id="trace-btn" onclick="startTrace()">ANALYZE →</button>
+</div>
 
 <div id="section-trace" style="scroll-margin-top:44px">
 <div class="layout">
@@ -2348,5 +2354,6 @@ if (location.hash) {
 
 document.getElementById('domain-input').addEventListener('keydown', e => { if(e.key==='Enter') startTrace(); });
 </script>
+</div><!-- end .body-content -->
 </body>
 </html>
